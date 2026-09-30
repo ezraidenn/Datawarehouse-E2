@@ -1,0 +1,35 @@
+{
+  "census": {
+    "name": "INEGI Censo de Población y Vivienda 2020 - AGEB y manzana urbana",
+    "provider": "INEGI",
+    "edition": "2020",
+    "url": "https://www.inegi.org.mx/contenidos/programas/ccpv/2020/datosabiertos/ageb_manzana/ageb_mza_urbana_31_cpv2020_csv.zip",
+    "original_grain": "one row per urban block, with total rows per AGEB, locality, municipality and state",
+    "file_name": "ageb_mza_urbana_31_cpv2020_csv.zip",
+    "size_bytes": 6044441,
+    "sha256": "5cc69c7a9f0f248e1e19f960b4498a5459d4bedbc1bdc5dd7f98bfac44f99180",
+    "download_date": "2026-09-30"
+  },
+  "geography": {
+    "name": "INEGI Marco Geoestadístico - Censo de Población y Vivienda 2020",
+    "provider": "INEGI",
+    "edition": "2020",
+    "url": "https://www.inegi.org.mx/contenidos/productos/prod_serv/contenidos/espanol/bvinegi/productos/geografia/marcogeo/889463807469/31_yucatan.zip",
+    "original_grain": "one polygon per geostatistical area (state, municipality, locality, AGEB, block)",
+    "file_name": "31_yucatan.zip",
+    "size_bytes": 50570164,
+    "sha256": "c486f642edbae13e51e219374d15f432758d565f86bc83472e6ec2c70b1e8f81",
+    "download_date": "2026-09-30"
+  },
+  "denue": {
+    "name": "INEGI Directorio Estadístico Nacional de Unidades Económicas",
+    "provider": "INEGI",
+    "edition": "latest published (see download date)",
+    "url": "https://www.inegi.org.mx/contenidos/masiva/denue/denue_31_csv.zip",
+    "original_grain": "one row per establishment",
+    "file_name": "denue_31_csv.zip",
+    "size_bytes": 10832360,
+    "sha256": "a47d4054f2cdeb5ebfce0da8ce1934cb830417174c504182b81964a329556536",
+    "download_date": "2026-09-30"
+  }
+}
