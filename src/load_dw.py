@@ -29,8 +29,15 @@ VALIDATION_OUT = config.OUTPUTS / "load_validation.json"
 
 def run_sql_file(engine: Engine, name: str) -> None:
     script = (config.SQL / name).read_text(encoding="utf-8")
-    with engine.begin() as conn:
-        conn.exec_driver_sql(script)
+    # Executed through the raw DBAPI cursor without parameters, so '%' in SQL comments and
+    # literals is not taken as a placeholder.
+    raw = engine.raw_connection()
+    try:
+        with raw.cursor() as cursor:
+            cursor.execute(script)
+        raw.commit()
+    finally:
+        raw.close()
     print(f"  ran sql/{name}")
 
 
