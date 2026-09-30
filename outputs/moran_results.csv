@@ -1,0 +1,8 @@
+analysis,x,y,n,islands_excluded,statistic,expected,z_sim,p_sim,n_not_significant,n_high_high,n_low_low,n_low_high,n_high_low
+global Moran's I,pop_density_km2,,524,2,0.3678,-0.0019,12.578,0.001,,,,,
+global Moran's I,business_density_km2,,524,2,0.505,-0.0019,17.071,0.001,,,,,
+global Moran's I,pea_rate_pct,,491,3,0.5468,-0.002,18.073,0.001,,,,,
+global Moran's I,businesses_per_1000,,491,3,0.4553,-0.002,15.817,0.001,,,,,
+LISA,pop_density_km2,,524,2,,,,,398.0,93.0,23.0,5.0,5.0
+LISA,business_density_km2,,524,2,,,,,355.0,120.0,41.0,4.0,4.0
+bivariate Moran's I,business_density_km2,pop_density_km2,524,2,0.3154,,7.753,0.001,,,,,
