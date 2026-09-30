@@ -1,0 +1,15 @@
+{
+  "establishments": {
+    "points": 56909,
+    "assigned_within": 56664,
+    "assigned_boundary": 0,
+    "unmatched": 245,
+    "unmatched_declared_rural": 165,
+    "match_rate_pct": 99.57,
+    "declared_ageb_agreement_pct": 99.82
+  },
+  "crime_incidents": {
+    "points": 0,
+    "note": "crime source not available"
+  }
+}
