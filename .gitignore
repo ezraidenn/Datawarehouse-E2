@@ -1,0 +1,23 @@
+# data is rebuilt by the download and pipeline steps
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# environment and secrets
+.env
+.venv/
+venv/
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+
+# editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
