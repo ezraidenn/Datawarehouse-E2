@@ -1,0 +1,5 @@
+x,y,n,spearman_rho,spearman_p,pearson_r_log,pearson_p_log,excluded_low_population
+pop_density_km2,business_density_km2,526,0.5536,1.4448237785450058e-43,0.5811,8.057078039556659e-49,False
+pop_density_km2,businesses_per_1000,494,-0.3101,1.799221574868849e-12,-0.1855,3.341868683957609e-05,True
+pea_rate_pct,businesses_per_1000,494,-0.3531,5.918871402294644e-16,-0.3099,1.857917200902149e-12,True
+share_65_plus_pct,service_density_km2,491,0.568,2.7308875050772004e-43,0.4324,8.74342732314213e-24,True
