@@ -1,0 +1,86 @@
+[
+  {
+    "n":1,
+    "check_name":"rows: dim_geography = staging.geography",
+    "status":"PASS",
+    "detail":"526 vs 526"
+  },
+  {
+    "n":2,
+    "check_name":"rows: fact_demographics = staging.census_ageb",
+    "status":"PASS",
+    "detail":"526 vs 526"
+  },
+  {
+    "n":3,
+    "check_name":"rows: fact_establishment = staging.establishment",
+    "status":"PASS",
+    "detail":"56664 vs 56664"
+  },
+  {
+    "n":4,
+    "check_name":"rows: fact_crime_incident = staging.crime_incident",
+    "status":"PASS",
+    "detail":"0 vs 0"
+  },
+  {
+    "n":5,
+    "check_name":"keys: every census AGEB has a polygon and every polygon a census row",
+    "status":"PASS",
+    "detail":"0 census keys without polygon, 0 polygons without census row"
+  },
+  {
+    "n":6,
+    "check_name":"integrity: no orphan establishment rows",
+    "status":"PASS",
+    "detail":""
+  },
+  {
+    "n":7,
+    "check_name":"integrity: no orphan crime rows",
+    "status":"PASS",
+    "detail":""
+  },
+  {
+    "n":8,
+    "check_name":"reconcile: warehouse population = census AGEB totals",
+    "status":"PASS",
+    "detail":"957399 vs 957399"
+  },
+  {
+    "n":9,
+    "check_name":"reconcile: establishments + unmatched = cleaned DENUE rows",
+    "status":"PASS",
+    "detail":"56664 + 245 vs 56909"
+  },
+  {
+    "n":10,
+    "check_name":"reconcile: incidents + unmatched = cleaned crime rows",
+    "status":"PASS",
+    "detail":"0 + 0 vs 0"
+  },
+  {
+    "n":11,
+    "check_name":"geometry: AGEB polygons valid, SRID 4326, positive area",
+    "status":"PASS",
+    "detail":""
+  },
+  {
+    "n":12,
+    "check_name":"geometry: every establishment point lies in its AGEB polygon",
+    "status":"PASS",
+    "detail":""
+  },
+  {
+    "n":13,
+    "check_name":"audit: spatial AGEB agrees with DENUE declared AGEB (>= 95%)",
+    "status":"PASS",
+    "detail":"99.82% agreement"
+  },
+  {
+    "n":14,
+    "check_name":"coverage: crime source loaded",
+    "status":"WARN",
+    "detail":"crime KPIs are NULL until the incident source is added"
+  }
+]
