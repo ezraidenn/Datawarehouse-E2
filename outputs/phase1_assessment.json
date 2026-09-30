@@ -1,0 +1,178 @@
+{
+  "census_rows_state": 40140,
+  "census_rows_municipality": 17073,
+  "census_levels": {
+    "block": 16540,
+    "AGEB total": 526,
+    "locality total": 6,
+    "municipality total": 1
+  },
+  "suppression_pct": {
+    "block (% not available)": {
+      "POBTOT": 0.0,
+      "P_12YMAS": 4.56,
+      "PEA": 4.81,
+      "POCUPADA": 4.85,
+      "POB0_14": 10.85,
+      "POB15_64": 4.65,
+      "POB65_MAS": 23.46,
+      "VIVTOT": 0.0,
+      "TVIVHAB": 1.67,
+      "PROM_OCUP": 4.54
+    },
+    "AGEB (% not available)": {
+      "POBTOT": 0.0,
+      "P_12YMAS": 0.76,
+      "PEA": 0.76,
+      "POCUPADA": 0.76,
+      "POB0_14": 1.33,
+      "POB15_64": 0.76,
+      "POB65_MAS": 2.66,
+      "VIVTOT": 0.0,
+      "TVIVHAB": 0.57,
+      "PROM_OCUP": 0.76
+    }
+  },
+  "population_municipality": 995129,
+  "population_sum_ageb": 957399,
+  "ageb_census_rows": 526,
+  "ageb_by_locality": {
+    "0001": 483,
+    "0084": 13,
+    "0075": 10,
+    "0077": 8,
+    "0093": 8,
+    "0111": 4
+  },
+  "denue_rows_state": 146384,
+  "denue_rows_municipality": 56909,
+  "denue_duplicate_ids": 0,
+  "denue_missing_coordinates": 0,
+  "denue_missing_ageb": 0,
+  "denue_fecha_alta_max": "2026-04",
+  "denue_sectors": {
+    "11": 14,
+    "21": 3,
+    "22": 60,
+    "23": 777,
+    "31": 2019,
+    "32": 844,
+    "33": 1236,
+    "43": 2071,
+    "46": 19441,
+    "48": 361,
+    "49": 148,
+    "51": 227,
+    "52": 746,
+    "53": 1245,
+    "54": 1751,
+    "55": 6,
+    "56": 745,
+    "61": 1895,
+    "62": 4212,
+    "71": 874,
+    "72": 8259,
+    "81": 9473,
+    "93": 502
+  },
+  "denue_size_classes": {
+    "0 a 5 personas": 45587,
+    "6 a 10 personas": 5364,
+    "11 a 30 personas": 4169,
+    "31 a 50 personas": 773,
+    "51 a 100 personas": 519,
+    "101 a 250 personas": 332,
+    "251 y más personas": 165
+  },
+  "geography_inspection": {
+    "31a": {
+      "unit": "urban AGEB",
+      "CRS": "MEXICO_ITRF_2008_LCC",
+      "EPSG": null,
+      "state polygons": 1532,
+      "Mérida polygons": 526,
+      "invalid geometries (Mérida)": 0,
+      "duplicate CVEGEO (Mérida)": 0,
+      "geometry types": "Polygon"
+    },
+    "31m": {
+      "unit": "block",
+      "CRS": "MEXICO_ITRF_2008_LCC",
+      "EPSG": null,
+      "state polygons": 48021,
+      "Mérida polygons": 17595,
+      "invalid geometries (Mérida)": 0,
+      "duplicate CVEGEO (Mérida)": 0,
+      "geometry types": "Polygon"
+    },
+    "31l": {
+      "unit": "locality",
+      "CRS": "MEXICO_ITRF_2008_LCC",
+      "EPSG": null,
+      "state polygons": 655,
+      "Mérida polygons": 53,
+      "invalid geometries (Mérida)": 0,
+      "duplicate CVEGEO (Mérida)": 0,
+      "geometry types": "MultiPolygon, Polygon"
+    },
+    "31mun": {
+      "unit": "municipality",
+      "CRS": "MEXICO_ITRF_2008_LCC",
+      "EPSG": null,
+      "state polygons": 106,
+      "Mérida polygons": 1,
+      "invalid geometries (Mérida)": 0,
+      "duplicate CVEGEO (Mérida)": 0,
+      "geometry types": "Polygon"
+    }
+  },
+  "source_crs_matches_epsg_6372": true,
+  "ageb_polygons": 526,
+  "ageb_area_km2_total": 259.8628841526895,
+  "keys_census_only": [],
+  "keys_polygon_only": [],
+  "candidate_units": {
+    "block (manzana)": {
+      "official polygons": "yes (31m)",
+      "census results": "yes",
+      "units in Mérida": 17595.0,
+      "median population": 52.0,
+      "PEA not available (%)": 4.81,
+      "units without any business (%)": 33.04
+    },
+    "urban AGEB": {
+      "official polygons": "yes (31a)",
+      "census results": "yes",
+      "units in Mérida": 526.0,
+      "median population": 1755.0,
+      "PEA not available (%)": 0.76,
+      "units without any business (%)": 3.04
+    },
+    "colonia": {
+      "official polygons": "not published by INEGI",
+      "census results": "no",
+      "units in Mérida": null,
+      "median population": null,
+      "PEA not available (%)": null,
+      "units without any business (%)": null
+    },
+    "locality": {
+      "official polygons": "yes (31l)",
+      "census results": "yes",
+      "units in Mérida": 53.0,
+      "median population": null,
+      "PEA not available (%)": null,
+      "units without any business (%)": null
+    }
+  },
+  "denue_join_test": {
+    "establishments with valid coordinates": 56909,
+    "assigned to an urban AGEB polygon": 56664,
+    "not inside any urban AGEB polygon": 245,
+    "match rate (%)": 99.57,
+    "points inside more than one polygon": 0,
+    "spatial AGEB equals declared AGEB": 56560,
+    "agreement among matched (%)": 99.82,
+    "unmatched whose declared AGEB is not urban": 165
+  }
+}
