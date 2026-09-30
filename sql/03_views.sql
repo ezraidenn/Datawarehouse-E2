@@ -142,10 +142,46 @@ SELECT count(*)                                                    AS agebs,
        round(sum(area_km2), 2)                                     AS area_km2,
        sum(pop_total)                                              AS pop_total,
        round(sum(pop_total) / sum(area_km2), 1)                    AS pop_density_km2,
-       sum(businesses_total)                                       AS businesses_total,
+       sum(businesses_total)::bigint                               AS businesses_total,
        round(sum(businesses_total) / sum(area_km2), 1)             AS business_density_km2,
        round(1000.0 * sum(businesses_total) / sum(pop_total), 2)   AS businesses_per_1000,
-       sum(crimes_total)                                           AS crimes_total,
+       sum(crimes_total)::bigint                                   AS crimes_total,
        round(1000.0 * sum(crimes_total) / sum(pop_total), 2)       AS crime_rate_per_1000
 FROM dw.vw_kpi_ageb;
 COMMENT ON VIEW dw.vw_kpi_city IS 'Grain: one row for the whole study area. Totals and city-wide ratios.';
+
+-- Column descriptions (used by the generated data dictionary) ----------------------
+COMMENT ON COLUMN dw.vw_kpi_ageb.cvegeo IS 'AGEB key.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.locality_name IS 'Locality the AGEB belongs to.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.area_km2 IS 'AGEB area, km².';
+COMMENT ON COLUMN dw.vw_kpi_ageb.pop_total IS 'KPI 1 Total population.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.pop_density_km2 IS 'KPI 2 Population density: pop_total / area_km2.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.pea_rate_pct IS 'KPI 3 Economically active population rate: 100 x PEA / population aged 12+.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.share_0_14_pct IS 'KPI 4 Share of population aged 0-14, %.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.share_15_64_pct IS 'KPI 4 Share of population aged 15-64, %.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.share_65_plus_pct IS 'KPI 4 Share of population aged 65+, %.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.businesses_total IS 'KPI 5 Total businesses: DENUE establishments in the AGEB.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.business_density_km2 IS 'KPI 6 Business density: businesses_total / area_km2.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.businesses_per_1000 IS 'KPI 7 Businesses per 1,000 residents: 1000 x businesses_total / pop_total.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.retail_density_km2 IS 'KPI 8 Retail density: retail establishments (SCIAN 46) / area_km2.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.service_density_km2 IS 'KPI 9 Service density: service establishments (SCIAN 51-81) / area_km2.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.dominant_sector IS 'KPI 10 Dominant economic activity: sector with most establishments.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.dominant_sector_share_pct IS 'Share of the AGEB establishments in the dominant sector, %.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.dominant_sector_tied IS 'True when two or more sectors tie for first place.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.crimes_total IS 'KPI 11 Total crime incidents assigned to the AGEB; NULL when no crime source is loaded.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.crime_rate_per_1000 IS 'KPI 12 Crime rate: 1000 x crimes_total / pop_total.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.crimes_per_100_businesses IS 'KPI 14 Crime relative to business activity: 100 x crimes_total / businesses_total.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.has_suppressed IS 'True when the census withheld at least one value of the AGEB.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.no_resident_population IS 'True when the AGEB has no resident population.';
+COMMENT ON COLUMN dw.vw_kpi_ageb.low_population IS 'True when the AGEB has fewer than 100 residents.';
+COMMENT ON COLUMN dw.vw_population_by_age.age_group IS 'Age group: 0-14, 15-64 or 65+.';
+COMMENT ON COLUMN dw.vw_population_by_age.age_order IS 'Sort order of the age group.';
+COMMENT ON COLUMN dw.vw_population_by_age.population IS 'Population of the age group; NULL when withheld by the census.';
+COMMENT ON COLUMN dw.vw_population_by_age.share_pct IS 'Share of the AGEB population, %.';
+COMMENT ON COLUMN dw.vw_activity_by_ageb.first_sector_code IS 'Lowest SCIAN code of the sector (31 for manufacturing).';
+COMMENT ON COLUMN dw.vw_activity_by_ageb.establishments IS 'Number of establishments of the sector in the AGEB.';
+COMMENT ON COLUMN dw.vw_activity_by_ageb.rank_in_ageb IS 'Rank of the sector within the AGEB by establishments, 1 = dominant.';
+COMMENT ON COLUMN dw.vw_crime_by_type_time.day_part IS 'Part of the day of the incident.';
+COMMENT ON COLUMN dw.vw_crime_by_type_time.incidents IS 'Number of incidents.';
+COMMENT ON COLUMN dw.vw_kpi_ageb_geo.geom IS 'AGEB polygon in WGS84.';
+COMMENT ON COLUMN dw.vw_kpi_city.agebs IS 'Number of urban AGEBs in the study area.';
