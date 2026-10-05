@@ -42,13 +42,15 @@ GRAIN = {
     "fact_demographics": "1 row = 1 urban AGEB (Census 2020)",
     "fact_establishment": "1 row = 1 DENUE establishment",
     "fact_crime_incident": "1 row = 1 georeferenced incident",
+    "fact_crime_municipal": "1 row = municipality x month x crime modality",
 }
 LAYER_COLOUR = {
     "fact_demographics": "#1D91C0",
     "fact_establishment": "#41AB5D",
     "fact_crime_incident": "#EF6548",
+    "fact_crime_municipal": "#EF6548",
 }
-RIGHT_SIDE = {"dim_crime_type", "dim_date", "dim_time_of_day"}  # drawn right of the facts
+RIGHT_SIDE = {"dim_crime_type", "dim_date", "dim_time_of_day", "dim_municipality"}  # drawn right of the facts
 
 
 def dot_executable() -> str:
@@ -146,8 +148,8 @@ def overview(facts, dims, edges) -> str:
         '<TD BGCOLOR="#41AB5D" WIDTH="14"></TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9">economic</FONT></TD>'
         '<TD BGCOLOR="#EF6548" WIDTH="14"></TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9">public safety</FONT></TD>'
         '</TR></TABLE>>];')
-    lines.append('labelloc="t"; label=<<FONT POINT-SIZE="15"><B>Constellation schema: three facts share '
-                 'the AGEB dimension</B></FONT>>;}')
+    lines.append('labelloc="t"; label=<<FONT POINT-SIZE="15"><B>Constellation schema: AGEB facts share dim_geography; '
+                 'municipal crime counts use dim_municipality</B></FONT>>;}')
     return "\n".join(lines)
 
 

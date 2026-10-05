@@ -61,6 +61,16 @@ SOURCES = {
         "url": "https://www.inegi.org.mx/contenidos/masiva/denue/denue_31_csv.zip",
         "original_grain": "one row per establishment",
     },
+    # The publisher's CDN refuses non-browser clients, so this file is downloaded with a web
+    # browser and placed in data/raw/crime_municipal/; the download step then verifies it.
+    "crime_municipal": {
+        "name": "SESNSP Incidencia delictiva del fuero común municipal (nueva metodología)",
+        "provider": "SESNSP",
+        "edition": "2015 to December 2025",
+        "url": "https://repodatos.atdt.gob.mx/api_update/sesnsp/incidencia_delictiva/IDM_NM_dic25.csv",
+        "original_grain": "one row per municipality, year and crime modality, with one column per month",
+        "manual": True,
+    },
 }
 
 

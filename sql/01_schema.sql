@@ -57,6 +57,22 @@ COMMENT ON COLUMN dw.dim_geography.area_km2 IS 'Polygon area in square kilometre
 COMMENT ON COLUMN dw.dim_geography.geom IS 'AGEB polygon in WGS84 (EPSG:4326).';
 COMMENT ON COLUMN dw.dim_geography.centroid IS 'Point guaranteed to lie inside the polygon, for labels.';
 
+CREATE TABLE dw.dim_municipality (
+    municipality_key  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    cvegeo            char(5) NOT NULL UNIQUE,
+    municipality_name text NOT NULL,
+    area_km2          numeric(12, 4) NOT NULL CHECK (area_km2 > 0),
+    pop_total_2020    integer NOT NULL,
+    geom              geometry(MultiPolygon, 4326) NOT NULL,
+    source_key        integer NOT NULL REFERENCES dw.dim_source (source_key)
+);
+COMMENT ON TABLE dw.dim_municipality IS 'Grain: one row per municipality (Mérida). Geography of the municipal crime counts, which have no location inside the city.';
+COMMENT ON COLUMN dw.dim_municipality.cvegeo IS 'INEGI municipal key: state (2) + municipality (3).';
+COMMENT ON COLUMN dw.dim_municipality.municipality_name IS 'Municipality name (Marco Geoestadístico).';
+COMMENT ON COLUMN dw.dim_municipality.area_km2 IS 'Municipal area in square kilometres, measured in EPSG:6372.';
+COMMENT ON COLUMN dw.dim_municipality.pop_total_2020 IS 'Total population of the municipality, Census 2020 municipal total row; denominator of municipal crime rates.';
+COMMENT ON COLUMN dw.dim_municipality.geom IS 'Municipal polygon in WGS84 (EPSG:4326).';
+
 CREATE TABLE dw.dim_activity (
     activity_key  integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     scian_code    char(6) NOT NULL UNIQUE,
@@ -82,8 +98,10 @@ COMMENT ON COLUMN dw.dim_business_size.max_employees IS 'Upper bound of the stra
 CREATE TABLE dw.dim_crime_type (
     crime_type_key integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     crime_type     text NOT NULL UNIQUE,
+    crime_category text,
     crime_group    text NOT NULL
 );
+COMMENT ON COLUMN dw.dim_crime_type.crime_category IS 'Broader crime type of the source (SESNSP "tipo de delito"), when published.';
 COMMENT ON TABLE dw.dim_crime_type IS 'Grain: one row per crime category published by the incident source.';
 COMMENT ON COLUMN dw.dim_crime_type.crime_group IS 'Harmonised group of the category.';
 
@@ -176,6 +194,21 @@ CREATE TABLE dw.fact_crime_incident (
     incident_count     smallint NOT NULL DEFAULT 1
 );
 CREATE INDEX fact_crime_geography_idx ON dw.fact_crime_incident (geography_key);
+
+CREATE TABLE dw.fact_crime_municipal (
+    crime_municipal_key integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    municipality_key    integer NOT NULL REFERENCES dw.dim_municipality (municipality_key),
+    crime_type_key      integer NOT NULL REFERENCES dw.dim_crime_type (crime_type_key),
+    date_key            integer NOT NULL REFERENCES dw.dim_date (date_key),
+    source_key          integer NOT NULL REFERENCES dw.dim_source (source_key),
+    modality            text NOT NULL,
+    incidents           integer NOT NULL CHECK (incidents >= 0),
+    UNIQUE (municipality_key, crime_type_key, modality, date_key)
+);
+COMMENT ON TABLE dw.fact_crime_municipal IS 'Grain: one municipality x month x crime modality (SESNSP). Incidents without location: they describe the municipality as a whole and are never assigned to AGEBs.';
+COMMENT ON COLUMN dw.fact_crime_municipal.date_key IS 'First day of the month (yyyymm01).';
+COMMENT ON COLUMN dw.fact_crime_municipal.modality IS 'Crime modality as published (SESNSP "modalidad").';
+COMMENT ON COLUMN dw.fact_crime_municipal.incidents IS 'Number of incidents reported in the month (additive).';
 CREATE INDEX fact_crime_geom_gix ON dw.fact_crime_incident USING gist (geom);
 COMMENT ON TABLE dw.fact_crime_incident IS 'Grain: one row per georeferenced crime incident located inside an urban AGEB of Mérida.';
 COMMENT ON COLUMN dw.fact_crime_incident.location_precision IS 'point, centroid or approximate, as declared for the source.';

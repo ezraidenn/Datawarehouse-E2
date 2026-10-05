@@ -94,10 +94,20 @@ checks AS (
            format('%s%% agreement', (SELECT round(100 * avg((g.cvegeo = f.denue_cvegeo)::int), 2)
                                      FROM dw.fact_establishment f JOIN dw.dim_geography g USING (geography_key)))
     UNION ALL
-    SELECT 14, 'coverage: crime source loaded',
-           EXISTS (SELECT 1 FROM dw.dim_source WHERE layer = 'public_safety'), true,
-           CASE WHEN EXISTS (SELECT 1 FROM dw.dim_source WHERE layer = 'public_safety')
-                THEN '' ELSE 'crime KPIs are NULL until the incident source is added' END
+    SELECT 14, 'coverage: georeferenced crime source loaded',
+           EXISTS (SELECT 1 FROM dw.dim_source WHERE source_code = 'crime'), true,
+           CASE WHEN EXISTS (SELECT 1 FROM dw.dim_source WHERE source_code = 'crime')
+                THEN '' ELSE 'AGEB crime KPIs are NULL until a georeferenced incident source is added' END
+    UNION ALL
+    SELECT 15, 'reconcile: municipal crime incidents = cleaned SESNSP total',
+           (SELECT coalesce(sum(incidents), 0) FROM dw.fact_crime_municipal)
+             = (SELECT value FROM audit WHERE item = 'crime_municipal_incidents'), false,
+           format('%s vs %s', (SELECT coalesce(sum(incidents), 0) FROM dw.fact_crime_municipal),
+                  (SELECT value FROM audit WHERE item = 'crime_municipal_incidents'))
+    UNION ALL
+    SELECT 16, 'rows: fact_crime_municipal = staging.crime_municipal',
+           (SELECT count(*) FROM dw.fact_crime_municipal) = (SELECT count(*) FROM staging.crime_municipal), false,
+           format('%s vs %s', (SELECT count(*) FROM dw.fact_crime_municipal), (SELECT count(*) FROM staging.crime_municipal))
 )
 SELECT n, check_name,
        CASE WHEN ok THEN 'PASS' WHEN warn_only THEN 'WARN' ELSE 'FAIL' END AS status,

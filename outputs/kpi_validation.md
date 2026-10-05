@@ -1,6 +1,6 @@
 # KPI validation
 
-Results of `sql/05_kpi_validation_queries.sql` run against the warehouse on 2026-09-30. Every value below comes from `dw` tables and views.
+Results of `sql/05_kpi_validation_queries.sql` run against the warehouse on 2026-10-05. Every value below comes from `dw` tables and views.
 
 ## KPI 1 — Total Population
 
@@ -105,7 +105,7 @@ Results of `sql/05_kpi_validation_queries.sql` run against the warehouse on 2026
 
 | crimes_total | fact_rows | crime_source_loaded |
 |---|---|---|
-| NULL | 0 | False |
+| NULL | 0 | True |
 
 ## KPI 12 — Crime Rate
 
@@ -129,6 +129,64 @@ _No rows: the layer is not loaded._
 |---|---|
 | NULL | NULL |
 
+## KPI 11-M — Total Crime Incidents (municipal)
+
+*SESNSP incidents per year, municipality of Mérida*
+
+| year | months_reported | crimes_total |
+|---|---|---|
+| 2015 | 12 | 21829 |
+| 2016 | 12 | 21345 |
+| 2017 | 12 | 15452 |
+| 2018 | 12 | 8740 |
+| 2019 | 12 | 11283 |
+| 2020 | 12 | 6530 |
+| 2021 | 12 | 6522 |
+| 2022 | 12 | 1820 |
+| 2023 | 12 | 1994 |
+| 2024 | 12 | 2003 |
+| 2025 | 12 | 3135 |
+
+## KPI 12-M — Crime Rate (municipal)
+
+*incidents per 1,000 residents of the municipality (population 2020)*
+
+| year | crimes_total | crime_rate_per_1000 |
+|---|---|---|
+| 2020 | 6530 | 6.56 |
+| 2021 | 6522 | 6.55 |
+| 2022 | 1820 | 1.83 |
+| 2023 | 1994 | 2.0 |
+| 2024 | 2003 | 2.01 |
+| 2025 | 3135 | 3.15 |
+
+## KPI 13-M — Incidents by Type and Time (municipal)
+
+*latest full year, by legal good affected and quarter*
+
+| crime_group | q1 | q2 | q3 | q4 | total |
+|---|---|---|---|---|---|
+| Property | 296 | 334 | 349 | 322 | 1301 |
+| Other | 155 | 197 | 290 | 315 | 957 |
+| Life and bodily integrity | 66 | 59 | 131 | 141 | 397 |
+| Family | 79 | 99 | 91 | 83 | 352 |
+| Sexual freedom and safety | 38 | 28 | 41 | 18 | 125 |
+| Society | 0 | 1 | 0 | 1 | 2 |
+| Personal liberty | 0 | 0 | 1 | 0 | 1 |
+
+## KPI 14-M — Crime relative to Business Activity (municipal)
+
+*incidents per 100 establishments*
+
+| year | crimes_total | businesses_total | crimes_per_100_businesses |
+|---|---|---|---|
+| 2020 | 6530 | 56664 | 11.52 |
+| 2021 | 6522 | 56664 | 11.51 |
+| 2022 | 1820 | 56664 | 3.21 |
+| 2023 | 1994 | 56664 | 3.52 |
+| 2024 | 2003 | 56664 | 3.53 |
+| 2025 | 3135 | 56664 | 5.53 |
+
 ## Warehouse totals against the cleaned sources
 
 *load audit*
@@ -137,4 +195,5 @@ _No rows: the layer is not loaded._
 |---|---|---|
 | census_population | 957399 | 957399 |
 | crime_clean_rows | 0 | 0 |
+| crime_municipal_incidents | 100653 | 100653 |
 | denue_clean_rows | 56909 | 56909 |

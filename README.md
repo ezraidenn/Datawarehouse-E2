@@ -29,19 +29,31 @@ into a dimensional warehouse and answers three questions from the warehouse alon
 | Demographic | INEGI, Censo de Población y Vivienda 2020 — principales resultados por AGEB y manzana urbana (Yucatán) | 2020 | one row per urban block, plus total rows per AGEB, locality, municipality and state | `POBTOT`, `POB0_14`, `POB15_64`, `POB65_MAS`, `P_12YMAS`, `PEA`, `POCUPADA`, `VIVTOT`, `TVIVHAB`, `PROM_OCUP` |
 | Economic | INEGI, Directorio Estadístico Nacional de Unidades Económicas (DENUE), Yucatán | latest published (registrations up to 2026-04 at download) | one row per establishment | `id`, `codigo_act` (SCIAN), `nombre_act`, `per_ocu`, `cve_ent`, `cve_mun`, `cve_loc`, `ageb`, `latitud`, `longitud` |
 | Geographic | INEGI, Marco Geoestadístico — Censo 2020 (Yucatán) | 2020 | one polygon per geostatistical area | layers `31a` (urban AGEB), `31m`, `31l`, `31mun`; key `CVEGEO` |
-| Public safety | Georeferenced incident dataset | pending | one row per incident | latitude, longitude, crime type, date, hour |
+| Public safety | SESNSP, Incidencia delictiva del fuero común municipal (`IDM_NM_dic25.csv`) | 2015 to December 2025 | one row per municipality, year and crime modality, one column per month | `Año`, `Cve. Municipio`, `Bien jurídico afectado`, `Tipo de delito`, `Subtipo de delito`, `Modalidad`, `Enero`…`Diciembre` |
 
 Download URLs, file names, sizes, SHA-256 checksums and download dates are recorded by the
 download step in [`docs/source_manifest.json`](docs/source_manifest.json).
 
 **Public-safety source.** No georeferenced incident dataset for Mérida was provided with the
-brief, and no public point-level dataset was found (municipal crime statistics are published only
-as monthly counts per municipality). The pipeline is built so that the source is read by a single
-module, [`src/extract_crime.py`](src/extract_crime.py), with a fixed output layout. Until an
-incident file is placed in `data/raw/crime/`, the crime tables are empty and every crime KPI is
-`NULL` (never zero), and the validation reports a warning. The full crime path — cleaning, spatial
-join, load, KPIs, maps, correlations and Moran statistics — is implemented and tested with a
-small fixture in `tests/fixtures/`.
+brief, and none is published: outside Mexico City, prosecutors publish crime data only as monthly
+counts per municipality. The project therefore uses the most detailed official source, the SESNSP
+municipal incidence, and handles it honestly:
+
+- it enters the warehouse as its own fact table at **municipality × month × crime modality**
+  grain, with the municipality (and its 2020 population) as the geography;
+- the crime KPIs are reported **at municipal level** (`dw.vw_kpi_crime_municipal_year`,
+  `dw.vw_crime_municipal_month`);
+- the counts are **never assigned to AGEBs**, because they have no location. The AGEB crime KPIs
+  stay `NULL` (never zero) and the crime maps and Moran statistics are not produced.
+
+A point-level path is also implemented and tested with a fixture in `tests/fixtures/`: a
+georeferenced incident file read by [`src/extract_crime.py`](src/extract_crime.py) would be
+cleaned, joined to AGEBs, loaded into `fact_crime_incident`, and would switch on the AGEB crime
+KPIs, maps, correlations and Moran statistics without other changes.
+
+The SESNSP file is served from a CDN that rejects non-browser clients, so it is the only source
+that has to be downloaded with a web browser (see section 9); the download step then verifies it
+and records its checksum.
 
 ## 3. Geographic strategy
 
@@ -100,13 +112,15 @@ The warehouse is a **constellation schema**: three fact tables share the conform
 | `fact_demographics` | one urban AGEB, Census 2020 | population totals and age groups, population 12+, economically active and employed population, dwellings | geography, source |
 | `fact_establishment` | one DENUE establishment inside an urban AGEB | `establishment_count` (=1), point geometry | geography, activity, business size, source |
 | `fact_crime_incident` | one georeferenced incident inside an urban AGEB | `incident_count` (=1), point geometry | geography, crime type, date, time of day, source |
+| `fact_crime_municipal` | one municipality × month × crime modality (SESNSP) | `incidents` | municipality, crime type, date, source |
 
 | Dimension | Grain |
 |---|---|
 | `dim_geography` | one urban AGEB: `CVEGEO`, hierarchy codes, names, `area_km2`, polygon, interior point |
+| `dim_municipality` | one municipality: key, name, area, 2020 population, polygon |
 | `dim_activity` | one SCIAN activity class with sector and sector group |
 | `dim_business_size` | one DENUE employment stratum |
-| `dim_crime_type` | one published crime category with a harmonised group |
+| `dim_crime_type` | one published crime subtype with its category and group (SESNSP legal good affected) |
 | `dim_date`, `dim_time_of_day` | one calendar day / one hour, with unknown members |
 | `dim_source` | one dataset, with URL, edition, download date and checksum |
 
@@ -143,6 +157,13 @@ denominator is zero or unknown is `NULL`. Results of one validation query per KP
 
 City level (`dw.vw_kpi_city`): 957,399 inhabitants on 259.9 km² (3,684 per km²), 56,664
 establishments (218 per km², 59.2 per 1,000 residents), economically active population rate 63.2%.
+
+**Crime KPIs at municipal level** (`dw.vw_kpi_crime_municipal_year`, `dw.vw_crime_municipal_month`):
+in 2025 the municipality recorded 3,135 incidents, 3.15 per 1,000 residents (population 2020) and
+5.53 per 100 establishments; property crimes were the largest specific group. KPI 13 by type and
+month is `dw.vw_crime_municipal_month`. KPIs 11–14 per AGEB (`crimes_total`,
+`crime_rate_per_1000`, `crimes_per_100_businesses` in `vw_kpi_ageb`) remain `NULL` until a
+georeferenced source exists.
 
 ## 7. Spatial analysis
 
@@ -212,12 +233,15 @@ pip install -r requirements.txt
 cp .env.example .env                      # set PGPASSWORD (and PGPORT if 5432 is busy)
 docker compose up -d                      # PostgreSQL + PostGIS
 
-python -m src.download                    # 1. original sources into data/raw (≈ 67 MB)
+# 0. Crime source (browser only): open the SESNSP URL listed in docs/source_manifest.json
+#    and save IDM_NM_dic25.csv as data/raw/crime_municipal/IDM_NM_dic25.csv (≈ 380 MB)
+python -m src.download                    # 1. INEGI sources into data/raw (≈ 67 MB), verify all
 python -m src.run_pipeline                # 2. clean → spatial join → load → validate
 python -m src.validate_kpis               # 3. one query per KPI → outputs/kpi_validation.md
 python -m src.analysis.kpi_maps           # 4. maps
 python -m src.analysis.correlations       # 5. correlations
 python -m src.analysis.spatial_autocorrelation   # 6. Moran, LISA, bivariate
+python -m src.analysis.crime_municipal    # 7. municipal crime KPIs and figures
 python -m src.make_data_dictionary        # optional: regenerate the data dictionary
 python -m src.make_model_diagram          # optional: regenerate the model diagrams
 python docs/report/build_report.py        # optional: rebuild the technical report (needs Chrome)
@@ -232,8 +256,12 @@ steps 2 to 6 again.
 
 ## 10. Assumptions, data-quality issues and limitations
 
-- **Crime source pending.** Crime KPIs and crime analyses are implemented but empty until an
-  incident file is supplied (section 2).
+- **Public safety without location.** Official crime data for Mérida have no coordinates, so crime
+  is analysed only at municipal level and cannot be related to AGEBs (section 2).
+- **Breaks in the crime series.** Monthly SESNSP counts for Mérida drop abruptly in mid-2017 and
+  mid-2021 (21,829 incidents in 2015, 1,820 in 2022), which suggests changes in recording rather
+  than in crime; the report uses the latest full year and does not interpret long-term trends.
+  Municipal rates use the 2020 population and current establishments as denominators.
 - **Withheld census values.** 18 AGEBs withhold at least one value for confidentiality; those
   values are `NULL` and excluded from rates, never imputed.
 - **Low-population AGEBs.** 6 AGEBs have no residents and 32 have fewer than 100; per-capita KPIs

@@ -23,6 +23,14 @@ FROM staging.geography g
 CROSS JOIN (SELECT source_key FROM dw.dim_source WHERE source_code = 'geography') s
 ORDER BY g.cvegeo;
 
+-- Municipality ------------------------------------------------------------------
+INSERT INTO dw.dim_municipality (cvegeo, municipality_name, area_km2, pop_total_2020, geom, source_key)
+SELECT m.cvegeo, m.municipality_name, m.area_km2, c.pop_total_2020,
+       ST_Multi(m.geometry)::geometry(MultiPolygon, 4326), s.source_key
+FROM staging.municipality m
+JOIN staging.census_municipality c USING (cvegeo)
+CROSS JOIN (SELECT source_key FROM dw.dim_source WHERE source_code = 'geography') s;
+
 -- Activity (SCIAN) --------------------------------------------------------------
 INSERT INTO dw.dim_activity (scian_code, activity_name, sector_code, sector_name, sector_group)
 SELECT scian_code, min(activity_name), min(sector_code), min(sector_name), min(sector_group)
@@ -37,9 +45,13 @@ FROM staging.size_class
 ORDER BY size_order;
 
 -- Crime type --------------------------------------------------------------------
-INSERT INTO dw.dim_crime_type (crime_type, crime_group)
-SELECT crime_type, min(crime_group)
-FROM staging.crime_incident
+INSERT INTO dw.dim_crime_type (crime_type, crime_category, crime_group)
+SELECT crime_type, min(crime_category), min(crime_group)
+FROM (
+    SELECT crime_type, NULL::text AS crime_category, crime_group FROM staging.crime_incident
+    UNION ALL
+    SELECT crime_type, crime_category, crime_group FROM staging.crime_municipal
+) t
 GROUP BY crime_type
 ORDER BY crime_type;
 
@@ -57,7 +69,9 @@ FROM (
     SELECT generate_series(min(to_date(date_key::text, 'YYYYMMDD')),
                            max(to_date(date_key::text, 'YYYYMMDD')),
                            interval '1 day') AS d
-    FROM staging.crime_incident
+    FROM (SELECT date_key FROM staging.crime_incident
+          UNION ALL
+          SELECT date_key FROM staging.crime_municipal) k
     WHERE date_key <> 0
 ) days;
 
@@ -108,6 +122,15 @@ JOIN dw.dim_geography g ON g.cvegeo = i.cvegeo
 JOIN dw.dim_crime_type t ON t.crime_type = i.crime_type
 CROSS JOIN (SELECT source_key FROM dw.dim_source WHERE source_code = 'crime') s
 ORDER BY i.source_incident_id;
+
+-- Fact: municipal crime counts ---------------------------------------------------
+INSERT INTO dw.fact_crime_municipal (municipality_key, crime_type_key, date_key, source_key, modality, incidents)
+SELECT m.municipality_key, t.crime_type_key, c.date_key, s.source_key, c.modality, c.incidents
+FROM staging.crime_municipal c
+JOIN dw.dim_municipality m ON m.cvegeo = c.municipality_cvegeo
+JOIN dw.dim_crime_type t ON t.crime_type = c.crime_type
+CROSS JOIN (SELECT source_key FROM dw.dim_source WHERE source_code = 'crime_municipal') s
+ORDER BY c.date_key, c.crime_type, c.modality;
 
 ANALYZE dw.dim_geography;
 ANALYZE dw.fact_establishment;

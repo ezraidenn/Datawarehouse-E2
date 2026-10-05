@@ -13,8 +13,8 @@ import argparse
 import sys
 import time
 
-from src import (clean_census, clean_crime, clean_denue, clean_geography, config,
-                 extract_crime, load_dw, spatial_join)
+from src import (clean_census, clean_crime, clean_crime_municipal, clean_denue, clean_geography,
+                 config, extract_crime, load_dw, spatial_join)
 
 STAGES = ("clean", "join", "load")
 
@@ -30,6 +30,7 @@ def stage_clean() -> None:
         print(f"crime: {error}")
         extract_crime.OUTPUT.unlink(missing_ok=True)
     clean_crime.main()
+    clean_crime_municipal.main()
 
 
 def stage_join() -> None:

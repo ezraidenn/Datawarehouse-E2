@@ -79,8 +79,20 @@
   },
   {
     "n":14,
-    "check_name":"coverage: crime source loaded",
+    "check_name":"coverage: georeferenced crime source loaded",
     "status":"WARN",
-    "detail":"crime KPIs are NULL until the incident source is added"
+    "detail":"AGEB crime KPIs are NULL until a georeferenced incident source is added"
+  },
+  {
+    "n":15,
+    "check_name":"reconcile: municipal crime incidents = cleaned SESNSP total",
+    "status":"PASS",
+    "detail":"100653 vs 100653"
+  },
+  {
+    "n":16,
+    "check_name":"rows: fact_crime_municipal = staging.crime_municipal",
+    "status":"PASS",
+    "detail":"12936 vs 12936"
   }
 ]

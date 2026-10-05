@@ -31,5 +31,16 @@
     "size_bytes": 10832360,
     "sha256": "a47d4054f2cdeb5ebfce0da8ce1934cb830417174c504182b81964a329556536",
     "download_date": "2026-09-30"
+  },
+  "crime_municipal": {
+    "name": "SESNSP Incidencia delictiva del fuero común municipal (nueva metodología)",
+    "provider": "SESNSP",
+    "edition": "2015 to December 2025",
+    "url": "https://repodatos.atdt.gob.mx/api_update/sesnsp/incidencia_delictiva/IDM_NM_dic25.csv",
+    "original_grain": "one row per municipality, year and crime modality, with one column per month",
+    "file_name": "IDM_NM_dic25.csv",
+    "size_bytes": 378737393,
+    "sha256": "3c1245fa6406dde5c73c5b60bf3d1f82ece9c41eec4dde8e273e4b4ab9617c11",
+    "download_date": "2026-10-05"
   }
 }

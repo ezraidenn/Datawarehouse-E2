@@ -49,7 +49,7 @@ def main() -> None:
     with engine.connect() as conn:
         for kpi_id, name, what, sql in blocks(script):
             frame = pd.read_sql(text(sql.rstrip(";")), conn)
-            title = f"KPI {kpi_id} — {name}" if kpi_id.isdigit() else name
+            title = f"KPI {kpi_id} — {name}" if kpi_id[0].isdigit() else name
             lines += ["", f"## {title}", "", f"*{what}*", "", to_markdown(frame)]
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")

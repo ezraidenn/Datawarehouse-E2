@@ -99,8 +99,10 @@ per 1,000 residents and <b>{crime['per_100_businesses']:.1f}</b> per 100 establi
 {crime['top_type_share']:.0f}% were {crime['top_type'].lower()}. Because these counts have no location,
 they cannot be assigned to AGEBs, and the AGEB-level crime KPIs and spatial statistics remain empty by design;
 the point-level path is implemented and tested for when georeferenced data become available.</p>
-<figure><img src="{img('outputs/figures/crime_municipal_trend.png')}" style="width:88%"><figcaption>Figure 6.
-Monthly crime incidents in the municipality of Mérida by crime group (SESNSP).</figcaption></figure>"""
+<div class="two"><figure><img src="{img('outputs/figures/crime_municipal_trend.png')}"><figcaption>Figure 6.
+Monthly incidents by legal good affected, 2015–2025 (SESNSP).</figcaption></figure>
+<figure><img src="{img('outputs/figures/crime_municipal_types.png')}"><figcaption>Figure 7. Most frequent
+crime types in {crime['year']}.</figcaption></figure></div>"""
 else:
     crime_section = """
 <h3>Public safety</h3>
@@ -184,8 +186,8 @@ checksummed and never edited; Python cleans and joins; SQL scripts rebuild a <co
 the dimensional schema <code>dw</code>, create the KPI views and run {len(checks)} validation checks
 ({passed} pass{', ' + str(len(warned)) + ' warning' if warned else ''}) covering row counts, keys, referential integrity,
 reconciliation with the sources and geometry. A second run reproduces identical results.</p>
-<p>The model is a <b>constellation schema</b>: three fact tables with explicit grain share the conformed
-dimension <code>dim_geography</code>, which is what allows indicators that combine layers.</p>
+<p>The model is a <b>constellation schema</b>: the three AGEB-level fact tables share the conformed
+dimension <code>dim_geography</code>, which is what allows indicators that combine layers{'; the municipal crime counts, which have no location, form a fourth fact table on <code>dim_municipality</code> and are never assigned to AGEBs' if crime else ''}.</p>
 <table><tr><th>Fact</th><th>Grain</th></tr>
 <tr><td>fact_demographics</td><td>one urban AGEB, census 2020</td></tr>
 <tr><td>fact_establishment</td><td>one DENUE establishment</td></tr>
@@ -245,7 +247,7 @@ Bivariate LISA: business density against neighbouring population density.</figca
 <li><b>Ecological fallacy and MAUP.</b> Results describe AGEBs, not people or firms, and could change with other boundaries.</li>
 <li><b>Different reference dates.</b> Population and boundaries are from 2020, establishments from the latest DENUE{', crime from ' + str(crime['year']) if crime else ''}.</li>
 <li><b>Coverage.</b> DENUE under-represents informal and home-based activity; {est['unmatched']} establishments outside the 2020 urban AGEBs are excluded.</li>
-<li><b>Public safety.</b> Without published incident coordinates, crime cannot be analysed inside the city; the warehouse is ready for a point-level source.</li>
+<li><b>Public safety.</b> Without published incident coordinates, crime cannot be analysed inside the city; the warehouse is ready for a point-level source.{' The SESNSP series shows abrupt breaks in mid-2017 and mid-2021 that suggest changes in recording, so trends are not interpreted.' if crime else ''}</li>
 <li><b>Neighbourhood rule.</b> Queen contiguity ignores proximity across gaps; another rule could change which AGEBs are flagged locally.</li>
 </ul>
 </body></html>"""

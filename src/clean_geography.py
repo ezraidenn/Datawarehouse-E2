@@ -16,6 +16,7 @@ from src import config
 
 LAYER_DIR = config.DATA_RAW / "geography" / "extracted" / "conjunto_de_datos"
 OUTPUT = config.DATA_PROCESSED / "geography.parquet"
+MUNICIPALITY_OUTPUT = config.DATA_PROCESSED / "municipality.parquet"
 
 
 def read_layer(name: str) -> gpd.GeoDataFrame:
@@ -60,7 +61,19 @@ def clean() -> gpd.GeoDataFrame:
     return out[columns].sort_values("cvegeo").reset_index(drop=True)
 
 
+def municipality() -> gpd.GeoDataFrame:
+    """The municipality polygon, the geography of the municipal crime counts."""
+    mun = read_layer("31mun")
+    mun = mun[mun["CVEGEO"] == config.STATE_MUN].copy()
+    mun["area_km2"] = mun.area / 1e6
+    mun = mun.to_crs(config.CRS_STORAGE)
+    mun["geometry"] = mun.geometry.apply(lambda g: g if g.geom_type == "MultiPolygon" else MultiPolygon([g]))
+    return mun.rename(columns={"CVEGEO": "cvegeo", "NOMGEO": "municipality_name"})[
+        ["cvegeo", "municipality_name", "area_km2", "geometry"]].reset_index(drop=True)
+
+
 def main() -> None:
+    municipality().to_parquet(MUNICIPALITY_OUTPUT, index=False)
     frame = clean()
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     frame.to_parquet(OUTPUT, index=False)

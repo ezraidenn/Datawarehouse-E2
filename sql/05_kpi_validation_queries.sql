@@ -87,6 +87,32 @@ SELECT round(100.0 * sum(crimes_total) / sum(businesses_total), 2) AS city_crime
        percentile_cont(0.5) WITHIN GROUP (ORDER BY crimes_per_100_businesses) AS median_ageb_crimes_per_100_businesses
 FROM dw.vw_kpi_ageb;
 
+-- @kpi 11-M | Total Crime Incidents (municipal) | SESNSP incidents per year, municipality of Mérida
+SELECT year, months_reported, crimes_total
+FROM dw.vw_kpi_crime_municipal_year
+ORDER BY year;
+
+-- @kpi 12-M | Crime Rate (municipal) | incidents per 1,000 residents of the municipality (population 2020)
+SELECT year, crimes_total, crime_rate_per_1000
+FROM dw.vw_kpi_crime_municipal_year
+WHERE year >= 2020
+ORDER BY year;
+
+-- @kpi 13-M | Incidents by Type and Time (municipal) | latest full year, by legal good affected and quarter
+SELECT crime_group, sum(incidents) FILTER (WHERE month <= 3) AS q1, sum(incidents) FILTER (WHERE month BETWEEN 4 AND 6) AS q2,
+       sum(incidents) FILTER (WHERE month BETWEEN 7 AND 9) AS q3, sum(incidents) FILTER (WHERE month >= 10) AS q4,
+       sum(incidents) AS total
+FROM dw.vw_crime_municipal_month
+WHERE year = (SELECT max(year) FROM dw.vw_kpi_crime_municipal_year WHERE months_reported = 12)
+GROUP BY crime_group
+ORDER BY total DESC;
+
+-- @kpi 14-M | Crime relative to Business Activity (municipal) | incidents per 100 establishments
+SELECT year, crimes_total, businesses_total, crimes_per_100_businesses
+FROM dw.vw_kpi_crime_municipal_year
+WHERE year >= 2020
+ORDER BY year;
+
 -- @kpi reconciliation | Warehouse totals against the cleaned sources | load audit
 SELECT a.item,
        a.value AS source_value,
@@ -96,6 +122,7 @@ SELECT a.item,
                                      + (SELECT count(*) FROM staging.unmatched_points WHERE layer = 'establishment')
            WHEN 'crime_clean_rows' THEN (SELECT count(*) FROM dw.fact_crime_incident)
                                      + (SELECT count(*) FROM staging.unmatched_points WHERE layer = 'crime_incident')
+           WHEN 'crime_municipal_incidents' THEN (SELECT sum(incidents) FROM dw.fact_crime_municipal)
        END AS warehouse_value
 FROM staging.load_audit a
 ORDER BY a.item;

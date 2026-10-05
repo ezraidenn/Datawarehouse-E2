@@ -114,7 +114,7 @@ because blocks withheld for confidentiality would make the sums fall short.</p>"
 
 S.append(slide("2 · Data Warehouse", "Constellation schema on PostgreSQL/PostGIS", f"""
 <img class="wide" src="{img('docs/warehouse_overview.png')}">
-<div class="tiles3">{tile('fact_demographics', '1 row = 1 urban AGEB (Census 2020)')}{tile('fact_establishment', '1 row = 1 DENUE establishment')}{tile('fact_crime_incident', '1 row = 1 georeferenced incident')}</div>""", 6))
+<div class="tiles4 facts">{tile('fact_demographics', '1 row = 1 urban AGEB (Census 2020)')}{tile('fact_establishment', '1 row = 1 DENUE establishment')}{tile('fact_crime_incident', '1 row = 1 georeferenced incident')}{tile('fact_crime_municipal', '1 row = municipality × month × crime modality')}</div>""", 6))
 
 S.append(slide("3 · KPIs", "The 14 KPIs are SQL views on the warehouse", f"""
 <div class="split kpis"><div class="tiles2">{tile(n(city['pop_total']), 'total population')}{tile(n(city['pop_density_km2']), 'inhabitants per km²')}
@@ -124,7 +124,7 @@ S.append(slide("3 · KPIs", "The 14 KPIs are SQL views on the warehouse", f"""
 <img class="map" src="{img('outputs/maps/08_dominant_activity.png')}"></div>
 <p class="note">Rules: densities per km² · rates in % · NULL instead of zero when a denominator is missing ·
 {int(kpi['low_population'].sum())} AGEBs with fewer than 100 residents flagged for per-capita KPIs ·
-crime KPIs {'at municipal level' if crime else 'empty until a georeferenced source exists'}.</p>""", 7))
+crime KPIs {'reported at municipal level (no coordinates published)' if crime else 'empty until a georeferenced source exists'}.</p>""", 7))
 
 S.append(slide("3 · Geographic distribution", "Business concentrates in the centre; residents live around it", f"""
 <div class="two"><img src="{img('outputs/maps/01_population_density.png')}"><img src="{img('outputs/maps/04_business_density.png')}"></div>""", 8))
@@ -156,14 +156,15 @@ S.append(slide("4 · Spatial autocorrelation", "Every indicator clusters in spac
 
 crime_text = (f"Municipal crime ({crime['year']}): <b>{n(crime['incidents_year'])}</b> incidents · "
               f"<b>{crime['rate_per_1000']:.1f}</b> per 1,000 residents · <b>{crime['per_100_businesses']:.1f}</b> per 100 "
-              f"establishments. No coordinates are published, so crime cannot be placed in AGEBs."
+              f"establishments (SESNSP). No coordinates are published, so crime cannot be placed in AGEBs."
               if crime else
               "No incident coordinates are published for Mérida (official data stop at municipal level). "
               "The crime path is built and tested; crime KPIs stay NULL — not zero — until a georeferenced source exists.")
 S.append(slide("4 · Bivariate relationship and public safety", "Business sits next to populated areas", f"""
 <div class="split"><div>
 <div class="tiles1">{tile(f"{bv['statistic']:.2f}", f"bivariate Moran's I, business density vs neighbouring population density (p = {bv['p_sim']:.3f})")}</div>
-<div class="callout"><h3>Public safety</h3><p>{crime_text}</p></div></div>
+<div class="callout"><h3>Public safety</h3><p>{crime_text}</p></div>
+{f'<img class="chart" src="{img("outputs/figures/crime_municipal_types.png")}">' if crime else ''}</div>
 <img class="map" src="{img('outputs/maps/bilisa_01_business_density_km2__pop_density_km2.png')}"></div>""", 11))
 
 S.append(slide("4 · Conclusions", "What the warehouse shows, and what it cannot", """
@@ -201,7 +202,7 @@ h3 {{ color: #0B3C5D; margin: 0 0 10px; font-size: 28px; }}
 .tiles3 {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 26px; }}
 .tiles4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }}
 .tiles2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }} .tiles2 .tile b {{ font-size: 44px; }} .kpis {{ grid-template-columns: 700px 1fr; }} .kpis .map {{ margin-top: 0; max-height: 560px; }}
-.tiles4 {{ row-gap: 26px; }} .tiles4 .tile {{ padding: 34px 28px; }} .tiles4 .tile b {{ font-size: 54px; }}
+.tiles4 {{ row-gap: 26px; }} .tiles4.facts .tile {{ padding: 20px 22px; }} .tiles4.facts {{ gap: 14px; }} .tiles4.facts .tile b {{ font-size: 23px; }} .tiles4.facts .tile span {{ font-size: 18px; }} .tiles4 .tile {{ padding: 34px 28px; }} .tiles4 .tile b {{ font-size: 54px; }}
 .cards4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }}
 .card {{ border-top: 6px solid #41B6C4; background: #F7FBFD; border-radius: 6px; padding: 26px; min-height: 430px; display: flex; flex-direction: column; }}
 .card p {{ font-size: 24px; margin: 0 0 6px; }} .card em {{ color: #5B6773; font-size: 21px; flex: 1; }} .card h3 {{ font-size: 30px; }}
@@ -230,6 +231,7 @@ h3 {{ color: #0B3C5D; margin: 0 0 10px; font-size: 28px; }}
 .track::after {{ content: ""; position: absolute; left: 50%; top: -6px; bottom: -6px; width: 2px; background: #9AA5B1; }}
 .pos {{ position: absolute; left: 50%; top: 0; bottom: 0; background: #225EA8; border-radius: 0 4px 4px 0; }}
 .neg {{ position: absolute; right: 50%; top: 0; bottom: 0; background: #41B6C4; border-radius: 4px 0 0 4px; }}
+.chart {{ width: 100%; max-height: 250px; object-fit: contain; object-position: left; margin-top: 14px; }}
 .callout {{ margin-top: 22px; background: #FFF7EC; border-left: 6px solid #FE9929; border-radius: 6px; padding: 18px 22px; }}
 .callout p {{ font-size: 22px; line-height: 1.45; margin: 0; color: #3D4A57; }}
 .two-text {{ display: grid; grid-template-columns: 1fr 1fr; gap: 70px; }} .two-text .list {{ font-size: 26px; }} .two-text .list li {{ margin: 18px 0; }} .two-text .list li::before {{ top: 15px; }}

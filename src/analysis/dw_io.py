@@ -34,4 +34,4 @@ def read_from_dw(view: str, geometry: bool = False) -> pd.DataFrame | gpd.GeoDat
 def crime_loaded() -> bool:
     with engine().connect() as conn:
         return bool(conn.execute(text(
-            "SELECT EXISTS (SELECT 1 FROM dw.dim_source WHERE layer = 'public_safety')")).scalar())
+            "SELECT EXISTS (SELECT 1 FROM dw.dim_source WHERE source_code = 'crime')")).scalar())

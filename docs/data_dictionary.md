@@ -11,19 +11,23 @@ description.
 |---|---|---|---|
 | [`dim_activity`](#dimactivity) | table | 744 | Grain: one row per SCIAN activity class present in DENUE for Mérida. |
 | [`dim_business_size`](#dimbusinesssize) | table | 7 | Grain: one row per DENUE employment stratum (per_ocu). |
-| [`dim_crime_type`](#dimcrimetype) | table | 0 | Grain: one row per crime category published by the incident source. |
-| [`dim_date`](#dimdate) | table | 1 | Grain: one row per calendar day of the incident period; key yyyymmdd, 0 = unknown date. |
+| [`dim_crime_type`](#dimcrimetype) | table | 55 | Grain: one row per crime category published by the incident source. |
+| [`dim_date`](#dimdate) | table | 3,989 | Grain: one row per calendar day of the incident period; key yyyymmdd, 0 = unknown date. |
 | [`dim_geography`](#dimgeography) | table | 526 | Grain: one row per urban AGEB of the municipality of Mérida (Marco Geoestadístico 2020). Conformed dimension shared by all facts. |
-| [`dim_source`](#dimsource) | table | 3 | Grain: one row per original dataset. Provenance of every fact row. |
+| [`dim_municipality`](#dimmunicipality) | table | 1 | Grain: one row per municipality (Mérida). Geography of the municipal crime counts, which have no location inside the city. |
+| [`dim_source`](#dimsource) | table | 4 | Grain: one row per original dataset. Provenance of every fact row. |
 | [`dim_time_of_day`](#dimtimeofday) | table | 25 | Grain: one row per hour of the day (0-23); -1 = unknown time. |
 | [`fact_crime_incident`](#factcrimeincident) | table | 0 | Grain: one row per georeferenced crime incident located inside an urban AGEB of Mérida. |
+| [`fact_crime_municipal`](#factcrimemunicipal) | table | 12,936 | Grain: one municipality x month x crime modality (SESNSP). Incidents without location: they describe the municipality as a whole and are never assigned to AGEBs. |
 | [`fact_demographics`](#factdemographics) | table | 526 | Grain: one row per urban AGEB, Census 2020 (AGEB total rows published by INEGI). |
 | [`fact_establishment`](#factestablishment) | table | 56,664 | Grain: one row per DENUE establishment located inside an urban AGEB of Mérida. |
 | [`vw_activity_by_ageb`](#vwactivitybyageb) | view | 5,396 | Grain: AGEB x SCIAN sector (by name). Establishment counts and rank within the AGEB; ties broken by sector code. |
 | [`vw_crime_by_type_time`](#vwcrimebytypetime) | view | 0 | Grain: AGEB x crime type x year x month x weekday x part of day. Incident counts. |
+| [`vw_crime_municipal_month`](#vwcrimemunicipalmonth) | view | 12,936 | Grain: municipality x month x crime modality. KPI 13 (incidents by type and time) at municipal level. |
 | [`vw_kpi_ageb`](#vwkpiageb) | view | 526 | Grain: one row per urban AGEB. The scalar KPIs of the project; KPI 13 (incidents by type and time) is dw.vw_crime_by_type_time. |
 | [`vw_kpi_ageb_geo`](#vwkpiagebgeo) | view | 526 | Grain: one row per urban AGEB. vw_kpi_ageb plus the AGEB polygon. |
 | [`vw_kpi_city`](#vwkpicity) | view | 1 | Grain: one row for the whole study area. Totals and city-wide ratios. |
+| [`vw_kpi_crime_municipal_year`](#vwkpicrimemunicipalyear) | view | 11 | Grain: municipality x year. Crime KPIs 11, 12 and 14 at municipal level; rates use the 2020 municipal population and the current establishments, so they are approximations for years far from those references. |
 | [`vw_population_by_age`](#vwpopulationbyage) | view | 1,578 | Grain: AGEB x age group. Population counts and shares of the AGEB total. |
 
 ## dim_activity
@@ -59,6 +63,7 @@ description.
 |---|---|---|---|---|
 | `crime_type_key` | integer | PK | no | Surrogate key. |
 | `crime_type` | text |  | no | Crime category as published by the source, upper case. |
+| `crime_category` | text |  | yes | Broader crime type of the source (SESNSP "tipo de delito"), when published. |
 | `crime_group` | text |  | no | Harmonised group of the category. |
 
 ## dim_date
@@ -67,7 +72,7 @@ description.
 
 | Column | Type | Key | Null | Description |
 |---|---|---|---|---|
-| `date_key` | integer | PK | no | Surrogate key. |
+| `date_key` | integer | PK | no | First day of the month (yyyymm01). |
 | `full_date` | date |  | yes | Calendar date; NULL for the unknown member. |
 | `year` | smallint |  | yes | Calendar year. |
 | `quarter` | smallint |  | yes | Quarter 1-4. |
@@ -95,6 +100,20 @@ description.
 | `area_km2` | numeric(12,6) |  | no | Polygon area in square kilometres, measured in EPSG:6372. |
 | `geom` | geometry(MultiPolygon,4326) |  | no | AGEB polygon in WGS84 (EPSG:4326). |
 | `centroid` | geometry(Point,4326) |  | no | Point guaranteed to lie inside the polygon, for labels. |
+| `source_key` | integer | FK → dim_source | no | Reference to dim_source. |
+
+## dim_municipality
+
+*table* — Grain: one row per municipality (Mérida). Geography of the municipal crime counts, which have no location inside the city.
+
+| Column | Type | Key | Null | Description |
+|---|---|---|---|---|
+| `municipality_key` | integer | PK | no | Surrogate key. |
+| `cvegeo` | character(5) |  | no | INEGI municipal key: state (2) + municipality (3). |
+| `municipality_name` | text |  | no | Municipality name (Marco Geoestadístico). |
+| `area_km2` | numeric(12,4) |  | no | Municipal area in square kilometres, measured in EPSG:6372. |
+| `pop_total_2020` | integer |  | no | Total population of the municipality, Census 2020 municipal total row; denominator of municipal crime rates. |
+| `geom` | geometry(MultiPolygon,4326) |  | no | Municipal polygon in WGS84 (EPSG:4326). |
 | `source_key` | integer | FK → dim_source | no | Reference to dim_source. |
 
 ## dim_source
@@ -135,13 +154,27 @@ description.
 | `source_incident_id` | text |  | no | Incident identifier in the source, or a hash of the raw row when the source has none. |
 | `geography_key` | integer | FK → dim_geography | no | Reference to dim_geography. |
 | `crime_type_key` | integer | FK → dim_crime_type | no | Reference to dim_crime_type. |
-| `date_key` | integer | FK → dim_date | no | Reference to dim_date. |
+| `date_key` | integer | FK → dim_date | no | First day of the month (yyyymm01). |
 | `time_key` | smallint | FK → dim_time_of_day | no | Reference to dim_time_of_day. |
 | `source_key` | integer | FK → dim_source | no | Reference to dim_source. |
 | `location_precision` | text |  | no | point, centroid or approximate, as declared for the source. |
 | `join_method` | text |  | no | within = point inside the polygon; boundary = point on a polygon edge. |
 | `geom` | geometry(Point,4326) |  | no | Incident location in WGS84, from the source latitude/longitude. |
 | `incident_count` | smallint |  | no | Additive measure, always 1. |
+
+## fact_crime_municipal
+
+*table* — Grain: one municipality x month x crime modality (SESNSP). Incidents without location: they describe the municipality as a whole and are never assigned to AGEBs.
+
+| Column | Type | Key | Null | Description |
+|---|---|---|---|---|
+| `crime_municipal_key` | integer | PK | no | Surrogate key. |
+| `municipality_key` | integer | FK → dim_municipality | no | Reference to dim_municipality. |
+| `crime_type_key` | integer | FK → dim_crime_type | no | Reference to dim_crime_type. |
+| `date_key` | integer | FK → dim_date | no | First day of the month (yyyymm01). |
+| `source_key` | integer | FK → dim_source | no | Reference to dim_source. |
+| `modality` | text |  | no | Crime modality as published (SESNSP "modalidad"). |
+| `incidents` | integer |  | no | Number of incidents reported in the month (additive). |
 
 ## fact_demographics
 
@@ -210,6 +243,22 @@ description.
 | `is_weekend` | boolean |  |  | True on Saturday and Sunday. |
 | `day_part` | text |  |  | Part of the day of the incident. |
 | `incidents` | bigint |  |  | Number of incidents. |
+
+## vw_crime_municipal_month
+
+*view* — Grain: municipality x month x crime modality. KPI 13 (incidents by type and time) at municipal level.
+
+| Column | Type | Key | Null | Description |
+|---|---|---|---|---|
+| `cvegeo` | character(5) |  |  | AGEB key. |
+| `year` | smallint |  |  | Calendar year. |
+| `month` | smallint |  |  | Month 1-12. |
+| `month_name` | text |  |  | Month name. |
+| `crime_group` | text |  |  | Harmonised group of the category. |
+| `crime_category` | text |  |  | Broader crime type of the source (SESNSP "tipo de delito"), when published. |
+| `crime_type` | text |  |  | Crime category as published by the source, upper case. |
+| `modality` | text |  |  | Crime modality as published (SESNSP "modalidad"). |
+| `incidents` | integer |  |  | Incidents reported in the month for the modality. |
 
 ## vw_kpi_ageb
 
@@ -287,6 +336,21 @@ description.
 | `businesses_per_1000` | numeric |  |  | KPI 7 Businesses per 1,000 residents: 1000 x businesses_total / pop_total. |
 | `crimes_total` | bigint |  |  | KPI 11 Total crime incidents assigned to the AGEB; NULL when no crime source is loaded. |
 | `crime_rate_per_1000` | numeric |  |  | KPI 12 Crime rate: 1000 x crimes_total / pop_total. |
+
+## vw_kpi_crime_municipal_year
+
+*view* — Grain: municipality x year. Crime KPIs 11, 12 and 14 at municipal level; rates use the 2020 municipal population and the current establishments, so they are approximations for years far from those references.
+
+| Column | Type | Key | Null | Description |
+|---|---|---|---|---|
+| `cvegeo` | character(5) |  |  | AGEB key. |
+| `municipality_name` | text |  |  | Municipality name (Marco Geoestadístico). |
+| `year` | smallint |  |  | Calendar year. |
+| `months_reported` | bigint |  |  | Number of months with data in the year. |
+| `crimes_total` | bigint |  |  | KPI 11 at municipal level: incidents reported in the year. |
+| `crime_rate_per_1000` | numeric |  |  | KPI 12 at municipal level: 1000 x incidents / municipal population 2020. |
+| `businesses_total` | bigint |  |  | Establishments in the warehouse (study area). |
+| `crimes_per_100_businesses` | numeric |  |  | KPI 14 at municipal level: 100 x incidents / establishments. |
 
 ## vw_population_by_age
 

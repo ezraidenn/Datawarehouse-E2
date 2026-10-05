@@ -16,6 +16,7 @@ import pandas as pd
 from src import config
 
 OUTPUT = config.DATA_PROCESSED / "census_ageb.parquet"
+MUNICIPALITY_OUTPUT = config.DATA_PROCESSED / "census_municipality.parquet"
 
 # source variable -> warehouse column
 MEASURES = {
@@ -64,7 +65,18 @@ def clean() -> pd.DataFrame:
     return out.sort_values("cvegeo").reset_index(drop=True)
 
 
+def municipality_total() -> pd.DataFrame:
+    """Population of the whole municipality (its total row), the denominator of municipal rates."""
+    raw = pd.read_csv(source_file(), dtype=str, encoding="utf-8")
+    row = raw[(raw["MUN"] == config.MUNICIPALITY_CODE) & (raw["LOC"] == "0000")]
+    if len(row) != 1:
+        raise ValueError("expected exactly one municipal total row")
+    return pd.DataFrame({"cvegeo": [config.STATE_MUN],
+                         "pop_total_2020": [int(row["POBTOT"].iloc[0])]})
+
+
 def main() -> None:
+    municipality_total().to_parquet(MUNICIPALITY_OUTPUT, index=False)
     frame = clean()
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     frame.to_parquet(OUTPUT, index=False)

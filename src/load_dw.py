@@ -23,7 +23,7 @@ from src.clean_denue import SIZE_CLASSES
 from src.spatial_join import CRIME_OUT, ESTABLISHMENTS_OUT, GEOGRAPHY, UNMATCHED_OUT
 
 LAYERS = {"census": "demographic", "denue": "economic", "geography": "geographic",
-          "crime": "public_safety"}
+          "crime": "public_safety", "crime_municipal": "public_safety"}
 VALIDATION_OUT = config.OUTPUTS / "load_validation.json"
 
 
@@ -62,10 +62,15 @@ def load_staging(engine: Engine) -> None:
     crime_clean = pd.read_parquet(config.DATA_PROCESSED / "crime.parquet")
     crime = gpd.read_parquet(CRIME_OUT)
     unmatched = pd.read_parquet(UNMATCHED_OUT)
+    crime_municipal = pd.read_parquet(config.DATA_PROCESSED / "crime_municipal.parquet")
+    municipality = gpd.read_parquet(config.DATA_PROCESSED / "municipality.parquet")
+    census_municipality = pd.read_parquet(config.DATA_PROCESSED / "census_municipality.parquet")
 
     sources = sources_table()
     if len(crime_clean) == 0:
         sources = sources[sources["source_code"] != "crime"]
+    if len(crime_municipal) == 0:
+        sources = sources[sources["source_code"] != "crime_municipal"]
 
     size = pd.DataFrame(
         [(label, order, low, high) for label, (order, low, high) in SIZE_CLASSES.items()],
@@ -73,20 +78,25 @@ def load_staging(engine: Engine) -> None:
     ).astype({"max_employees": "Int64"})
 
     audit = pd.DataFrame({
-        "item": ["census_population", "denue_clean_rows", "crime_clean_rows"],
-        "value": [int(census["pop_total"].sum()), len(denue_clean), len(crime_clean)],
+        "item": ["census_population", "denue_clean_rows", "crime_clean_rows", "crime_municipal_incidents"],
+        "value": [int(census["pop_total"].sum()), len(denue_clean), len(crime_clean),
+                  int(crime_municipal["incidents"].sum())],
     })
 
     geography.to_postgis("geography", engine, schema="staging", index=False)
     establishments.to_postgis("establishment", engine, schema="staging", index=False)
     crime.to_postgis("crime_incident", engine, schema="staging", index=False)
     census.to_sql("census_ageb", engine, schema="staging", index=False)
+    municipality.to_postgis("municipality", engine, schema="staging", index=False)
+    census_municipality.to_sql("census_municipality", engine, schema="staging", index=False)
+    crime_municipal.to_sql("crime_municipal", engine, schema="staging", index=False)
     unmatched.to_sql("unmatched_points", engine, schema="staging", index=False)
     sources.to_sql("source", engine, schema="staging", index=False)
     size.to_sql("size_class", engine, schema="staging", index=False)
     audit.to_sql("load_audit", engine, schema="staging", index=False)
     print(f"  staging loaded: {len(geography)} AGEBs, {len(census)} census rows, "
-          f"{len(establishments)} establishments, {len(crime)} incidents, {len(unmatched)} unmatched points")
+          f"{len(establishments)} establishments, {len(crime)} incidents, {len(unmatched)} unmatched points, "
+          f"{len(crime_municipal)} municipal crime rows")
 
 
 def validate(engine: Engine) -> bool:

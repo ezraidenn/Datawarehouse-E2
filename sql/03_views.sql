@@ -6,8 +6,9 @@
 --   * Densities are per square kilometre (area measured in EPSG:6372).
 --   * Rates and shares are percentages.
 --   * A KPI whose denominator is zero or unknown is NULL, never zero.
---   * Crime KPIs are NULL for every AGEB while no crime source is loaded, so that
---     "no data" is never confused with "no incidents".
+--   * AGEB crime KPIs are NULL while no georeferenced incident source is loaded, so that
+--     "no data" is never confused with "no incidents". Municipal crime counts (no location)
+--     feed the municipal views at the end of this script, never the AGEB KPIs.
 --   * low_population flags AGEBs with fewer than 100 residents, where per-capita
 --     KPIs are extreme.
 -- =============================================================================
@@ -54,7 +55,7 @@ COMMENT ON VIEW dw.vw_crime_by_type_time IS 'Grain: AGEB x crime type x year x m
 -- All scalar KPIs: one row per AGEB ------------------------------------------------
 CREATE OR REPLACE VIEW dw.vw_kpi_ageb AS
 WITH crime_loaded AS (
-    SELECT EXISTS (SELECT 1 FROM dw.dim_source WHERE layer = 'public_safety') AS ok
+    SELECT EXISTS (SELECT 1 FROM dw.dim_source WHERE source_code = 'crime') AS ok
 ),
 business AS (
     SELECT f.geography_key,
@@ -150,6 +151,34 @@ SELECT count(*)                                                    AS agebs,
 FROM dw.vw_kpi_ageb;
 COMMENT ON VIEW dw.vw_kpi_city IS 'Grain: one row for the whole study area. Totals and city-wide ratios.';
 
+-- Municipal public safety (SESNSP counts without location) -------------------------
+CREATE OR REPLACE VIEW dw.vw_crime_municipal_month AS
+SELECT m.cvegeo, d.year, d.month, d.month_name, t.crime_group, t.crime_category, t.crime_type,
+       f.modality, f.incidents
+FROM dw.fact_crime_municipal f
+JOIN dw.dim_municipality m USING (municipality_key)
+JOIN dw.dim_crime_type t USING (crime_type_key)
+JOIN dw.dim_date d USING (date_key);
+COMMENT ON VIEW dw.vw_crime_municipal_month IS 'Grain: municipality x month x crime modality. KPI 13 (incidents by type and time) at municipal level.';
+
+CREATE OR REPLACE VIEW dw.vw_kpi_crime_municipal_year AS
+WITH yearly AS (
+    SELECT municipality_key, d.year, sum(f.incidents) AS crimes_total,
+           count(DISTINCT d.month) AS months_reported
+    FROM dw.fact_crime_municipal f
+    JOIN dw.dim_date d USING (date_key)
+    GROUP BY municipality_key, d.year
+)
+SELECT m.cvegeo, m.municipality_name, y.year, y.months_reported,
+       y.crimes_total,                                                                      -- KPI 11
+       round(1000.0 * y.crimes_total / m.pop_total_2020, 2)                  AS crime_rate_per_1000,        -- KPI 12
+       (SELECT count(*) FROM dw.fact_establishment)                          AS businesses_total,
+       round(100.0 * y.crimes_total / NULLIF((SELECT count(*) FROM dw.fact_establishment), 0), 2)
+                                                                             AS crimes_per_100_businesses   -- KPI 14
+FROM yearly y
+JOIN dw.dim_municipality m USING (municipality_key);
+COMMENT ON VIEW dw.vw_kpi_crime_municipal_year IS 'Grain: municipality x year. Crime KPIs 11, 12 and 14 at municipal level; rates use the 2020 municipal population and the current establishments, so they are approximations for years far from those references.';
+
 -- Column descriptions (used by the generated data dictionary) ----------------------
 COMMENT ON COLUMN dw.vw_kpi_ageb.cvegeo IS 'AGEB key.';
 COMMENT ON COLUMN dw.vw_kpi_ageb.locality_name IS 'Locality the AGEB belongs to.';
@@ -185,3 +214,9 @@ COMMENT ON COLUMN dw.vw_crime_by_type_time.day_part IS 'Part of the day of the i
 COMMENT ON COLUMN dw.vw_crime_by_type_time.incidents IS 'Number of incidents.';
 COMMENT ON COLUMN dw.vw_kpi_ageb_geo.geom IS 'AGEB polygon in WGS84.';
 COMMENT ON COLUMN dw.vw_kpi_city.agebs IS 'Number of urban AGEBs in the study area.';
+COMMENT ON COLUMN dw.vw_crime_municipal_month.incidents IS 'Incidents reported in the month for the modality.';
+COMMENT ON COLUMN dw.vw_kpi_crime_municipal_year.months_reported IS 'Number of months with data in the year.';
+COMMENT ON COLUMN dw.vw_kpi_crime_municipal_year.crimes_total IS 'KPI 11 at municipal level: incidents reported in the year.';
+COMMENT ON COLUMN dw.vw_kpi_crime_municipal_year.crime_rate_per_1000 IS 'KPI 12 at municipal level: 1000 x incidents / municipal population 2020.';
+COMMENT ON COLUMN dw.vw_kpi_crime_municipal_year.businesses_total IS 'Establishments in the warehouse (study area).';
+COMMENT ON COLUMN dw.vw_kpi_crime_municipal_year.crimes_per_100_businesses IS 'KPI 14 at municipal level: 100 x incidents / establishments.';

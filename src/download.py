@@ -64,6 +64,10 @@ def main() -> int:
                 continue
             print(f"[{key}] already present, checksum verified")
             downloaded = previous.get("download_date", date.today().isoformat())
+        elif source.get("manual"):
+            print(f"[{key}] not found. Open {source['url']} in a web browser and save the file "
+                  f"as {archive.relative_to(config.ROOT)}; then run this step again.")
+            continue
         else:
             print(f"[{key}] downloading {source['url']}")
             fetch(source["url"], archive)
@@ -71,7 +75,7 @@ def main() -> int:
             downloaded = date.today().isoformat()
 
         extracted = folder / "extracted"
-        if not extracted.exists():
+        if archive.suffix == ".zip" and not extracted.exists():
             with zipfile.ZipFile(archive) as zf:
                 zf.extractall(extracted)
 
