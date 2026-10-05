@@ -21,3 +21,7 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+# rendered intermediates (machine-specific file paths)
+docs/report/*.html
+docs/presentation/*.html

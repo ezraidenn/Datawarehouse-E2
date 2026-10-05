@@ -193,6 +193,8 @@ stable local results.
 │   └── 05_kpi_validation_queries.sql
 ├── tests/                      transforms and crime-extract layout
 ├── docs/                       decisions, data dictionary, model diagrams, setup
+│   ├── report/                 technical report (PDF) and its build script
+│   └── presentation/           slides (PDF) and their build script
 └── outputs/                    maps, figures, validation and analysis results
 ```
 
@@ -218,6 +220,8 @@ python -m src.analysis.correlations       # 5. correlations
 python -m src.analysis.spatial_autocorrelation   # 6. Moran, LISA, bivariate
 python -m src.make_data_dictionary        # optional: regenerate the data dictionary
 python -m src.make_model_diagram          # optional: regenerate the model diagrams
+python docs/report/build_report.py        # optional: rebuild the technical report (needs Chrome)
+python docs/presentation/build_slides.py  # optional: rebuild the slides (needs Chrome)
 pytest                                    # unit tests
 ```
 
